@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     home: Home(),
   ));
 }
@@ -18,64 +19,18 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final _textEditController = TextEditingController();
-
   List _toDoList = [];
-
   late Map<String, dynamic> _lastRemoved;
   late int _lastRemovedPosition;
 
   @override
   void initState() {
     super.initState();
-
     _readData().then((data) {
       setState(() {
         _toDoList = json.decode(data!);
       });
     });
-  }
-
-  void _addToDo() {
-    setState(() {
-      Map<String, dynamic> newToDo = Map();
-      var data = _textEditController.text;
-      
-      if(data.isNotEmpty) {
-        newToDo["title"] = _textEditController.text;
-        _textEditController.text = "";
-        newToDo["ok"] = false;
-        _toDoList.add(newToDo);
-        _saveData();
-      } else
-        Fluttertoast.showToast(
-            msg: "Informe a descrição da tarefa.",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.blueAccent,
-            textColor: Colors.white,
-            fontSize: 16.0
-        );
-    });
-  }
-
-  Future<Null> _refresh() async {
-    await Future.delayed(Duration(seconds: 1));
-
-    setState(() {
-      _toDoList.sort((a, b) {
-        if (a["ok"] && !b["ok"])
-          return 1;
-        else if (!a["ok"] && b["ok"])
-          return -1;
-        else
-          return 0;
-      });
-
-      _saveData();
-    });
-
-    return null;
   }
 
   @override
@@ -138,13 +93,13 @@ class _HomeState extends State<Home> {
       direction: DismissDirection.startToEnd,
       child: CheckboxListTile(
         title: Text(_toDoList[index]["title"]),
-        value: _toDoList[index]["ok"],
+        value: _toDoList[index]["done"],
         secondary: CircleAvatar(
-          child: Icon(_toDoList[index]["ok"] ? Icons.check : Icons.error),
+          child: Icon(_toDoList[index]["done"] ? Icons.check : Icons.error),
         ),
-        onChanged: (c) {
+        onChanged: (item) {
           setState(() {
-            _toDoList[index]["ok"] = c;
+            _toDoList[index]["done"] = item;
             _saveData();
           });
         },
@@ -175,6 +130,48 @@ class _HomeState extends State<Home> {
         });
       },
     );
+  }
+
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+
+    setState(() {
+      _toDoList.sort((a, b) {
+        if (a["done"] && !b["done"])
+          return 1;
+        else if (!a["done"] && b["done"])
+          return -1;
+        else
+          return 0;
+      });
+
+      _saveData();
+    });
+
+    return null;
+  }
+
+  void _addToDo() {
+    setState(() {
+      Map<String, dynamic> newToDo = Map();
+      var data = _textEditController.text;
+
+      if (data.isNotEmpty) {
+        newToDo["title"] = _textEditController.text;
+        _textEditController.text = "";
+        newToDo["done"] = false;
+        _toDoList.add(newToDo);
+        _saveData();
+      } else
+        Fluttertoast.showToast(
+            msg: "Informe a descrição da tarefa.",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.blueAccent,
+            textColor: Colors.white,
+            fontSize: 16.0);
+    });
   }
 
   Future<File> _getFile() async {
